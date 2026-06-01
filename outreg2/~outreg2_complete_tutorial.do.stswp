@@ -359,137 +359,31 @@ logistic child_school_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_l
 outreg2 using "binary.xls", append ctitle (Logistic) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 
-
-/*=============================================================================
-  PART 8 — FORMATTING TABLES
-  
-  outreg2 has many options to control appearance:
-  - Significance stars: which levels, which symbols
-  - Decimal places: separately for coefficients and SEs
-  - Summary statistics: which e() scalars to include
-  - Notes and titles
-=============================================================================*/
-
-di "=== PART 8: Table Formatting ==="
-
-* ── 8a: Significance stars ──────────────────────────────────────────────────
-/*
-  Default stars: * p<0.1, ** p<0.05, *** p<0.01
-  alpha()  controls the threshold VALUES (must be descending)
-  symbol() controls the SYMBOLS used
-*/
-
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-* Default stars
-outreg2 using "part8_formatting.xls",                          ///
-    replace                                                     ///
-    ctitle("(1) Default Stars")                                ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)
-
-* Custom: use only 2 levels with different symbols
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(2) 2-level Stars")                                ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    alpha(0.05, 0.01) symbol(*, **)
-
-* Stars based on p<0.01, p<0.05, p<0.1 (AER-style, opposite ordering)
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(3) AER Stars")                                    ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    alpha(0.1, 0.05, 0.01) symbol(+, *, **)
-
-* ── 8b: Decimal places ───────────────────────────────────────────────────────
-/*
-  dec(#)  → sets decimal places for BOTH coef and SE (e.g., dec(3))
-  bdec(#) → decimal places for coefficients only
-  sdec(#) → decimal places for SEs only
-*/
-
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(4) 2 decimals")                                   ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    dec(2)
-
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(5) 3 coef / 2 SE")                               ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    bdec(3) sdec(2)
-
-* ── 8c: Summary statistics in table ─────────────────────────────────────────
-/*
-  By default outreg2 includes: N, R-squared
-  You can add/change what is shown using e() scalars stored after estimation.
-  
-  e(N)         → observations
-  e(r2)        → R-squared
-  e(r2_a)      → Adjusted R-squared
-  e(rmse)      → Root MSE
-  e(F)         → F-statistic
-  e(ll)        → Log-likelihood (nonlinear models)
-  
-  Use: outreg2 ... , addstat("Label", e(scalar), ...)
-*/
-
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(6) Extra Stats")                                  ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    addstat("Adj. R-sq", e(r2_a),                             ///
-            "F-statistic", e(F),                               ///
-            "RMSE", e(rmse))                                   ///
-    dec(3)
-
-* ── 8d: Hide/show notes ──────────────────────────────────────────────────────
-/*
-  By default outreg2 adds a note like:
-  "t statistics in parentheses; * p<0.1 ** p<0.05 *** p<0.01"
-  
-  nonotes → suppresses the automatic note
-  You can write your own note in a subsequent addtext() row.
-*/
-
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-outreg2 using "part8_formatting.xls",                          ///
-    append                                                      ///
-    ctitle("(7) Custom Note")                                  ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    nonotes                                                    ///
-    addnote("Standard errors clustered at village level.",     ///
-            "*** p<0.01 ** p<0.05 * p<0.1")
-
-/*
-  addnote() → adds lines of text as footnotes to the table
-  Each string in addnote() becomes one footnote line.
-*/
-
-di "Table saved: part8_formatting.xls"
+*********************************
+**# Adding Summary Stats and Notes
+**********************************
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
+outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district) label nocons addstat("Adj. R-sq", e(r2_a), "F-statistic", e(F), "RMSE", e(rmse))  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+* ─
 /*=============================================================================
   PART 9 — MULTI-OUTCOME TABLES (side-by-side dependent variables)
   
