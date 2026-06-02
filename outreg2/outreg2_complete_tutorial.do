@@ -2,26 +2,25 @@
   COMPLETE OUTREG2 TUTORIAL FOR STATA
   Using a Simulated Large-Scale RCT Household Survey Dataset
   
-  Author  : Tutorial by Ahmed Eshtiak | BIGD, BRAC University
+  Author  : Ahmed Eshtiak | BIGD, BRAC University
   Purpose : In-depth mastery of outreg2 — every option, every use case
   Data    : Simulated RCT HH Survey — 5,000 households, 3 districts,
             treatment/control arms, baseline + endline structure
             
   SECTIONS:
-  Part 0  — Install outreg2 (if needed)
-  Part 1  — Generate Simulated RCT Household Survey Dataset
-  Part 2  — outreg2 Fundamentals: Basic Syntax & Structure
-  Part 3  — OLS Regressions: Single, Multiple, Adding Variables
-  Part 4  — Robust & Clustered Standard Errors
-  Part 5  — Fixed Effects (areg, xtreg, reghdfe)
-  Part 6  — IV / 2SLS with ivreg2
-  Part 7  — Binary Outcomes: Probit & Logit
-  Part 8  — Formatting Tables (stars, labels, stats, decimals)
-  Part 9  — Multi-equation / Side-by-Side Model Columns
-  Part 10 — Subgroup / Heterogeneous Treatment Effects
-  Part 11 — Word (.doc) and TeX output
-  Part 12 — Advanced: ctitle, addtext, addstat, keep, drop, order
-  Part 13 — Common Pitfalls & Debugging Tips
+  Part 0 — Install outreg2 and Required Packages
+  Part 1 — Generate Simulated RCT Household Survey Dataset
+  Part 2 — outreg2 Fundamentals: Basic Syntax & Core Logic
+  Part 3 — OLS Regression Tables: Single and Multiple Models
+  Part 4 — Side-by-Side Regression Tables with Controls, Fixed Effects, and Clustered SEs
+  Part 5 — Displaying Alternative Statistics: Standard Errors, p-values, and Model Notes
+  Part 6 — Binary Outcome Models: LPM, Probit, Probit Marginal Effects, and Logistic Regression
+  Part 7 — Adding Summary Statistics, Custom Text Rows, and Table Notes
+  Part 8 — Exporting Tables to Word (.doc) and LaTeX (.tex)
+  Part 9 — Advanced Formatting: sortvar, addstat, addtext, keep, drop, noaster, noni, nor2
+  Part 10 — Publication-Ready Treatment Effect Table for Multiple Outcomes
+  Part 11 — Common Pitfalls and Debugging Tips
+  Part 12 — Quick Reference: Most-Used outreg2 Options
 =============================================================================*/
 
 clear all
