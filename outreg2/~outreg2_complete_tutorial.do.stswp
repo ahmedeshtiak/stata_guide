@@ -382,7 +382,6 @@ outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district
 regress income_el treat
 outreg2 using "word_output.doc", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
-
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
 outreg2 using "word_output.doc", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") 
 
@@ -390,41 +389,11 @@ outreg2 using "word_output.doc", append ctitle ("With Control") label nocons sta
 **# Export Outputs to LaTeX
 ***************************
 
-* ── 11b: LaTeX output ────────────────────────────────────────────────────────
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+regress income_el treat
+outreg2 using "latex_output.tex", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
-outreg2 using "part11_table.tex",                              ///
-    replace                                                     ///
-    tex(frag)                                                   ///
-    ctitle("(1) Income")                                       ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    addtext("District FE","Yes")                               ///
-    title("Treatment Effects on Household Outcomes")
-
-regress pce_el treat pce_bl hh_size hh_female_hh                 ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-outreg2 using "part11_table.tex",                              ///
-    append                                                      ///
-    tex(frag)                                                   ///
-    ctitle("(2) PCE")                                          ///
-    label nocons keep(treat pce_bl)                            ///
-    drop(*.district)                                           ///
-    addtext("District FE","Yes")
-
-/*
-  tex(frag) → outputs a LaTeX fragment (just the tabular environment)
-              ready to \input{} into your paper's .tex file
-  tex(pr)   → outputs a complete LaTeX document (can compile standalone)
-  
-  To include in paper:   \input{part11_table.tex}
-*/
-
-di "Files saved: part11_table.doc | part11_table.tex"
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
+outreg2 using "latex_output.tex", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No")
 
 
 /*=============================================================================
