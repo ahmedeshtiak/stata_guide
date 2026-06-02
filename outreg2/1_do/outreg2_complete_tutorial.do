@@ -29,6 +29,18 @@ set seed 20250601          // reproducible randomness
 capture log close
 cd "D:\Ahmed Eshtiak\Local Disk D\STATA Github\stata_guide\outreg2"
 
+global DATA_DIR "data"
+global OUTPUT_DIR "outputs"
+global TABLE_DIR "$OUTPUT_DIR/tables"
+global DOC_DIR "$OUTPUT_DIR/documents"
+global TEX_DIR "$OUTPUT_DIR/latex"
+
+capture mkdir "$DATA_DIR"
+capture mkdir "$OUTPUT_DIR"
+capture mkdir "$TABLE_DIR"
+capture mkdir "$DOC_DIR"
+capture mkdir "$TEX_DIR"
+
 ***************************************************
 **# GENERATE SIMULATED RCT HOUSEHOLD SURVEY DATASET
 ***************************************************
@@ -69,7 +81,7 @@ label var vill_market_dist "Distance to nearest market (km)"
 label var vill_flood_risk "Flood-prone village (1=Yes)"
 label var vill_poverty_rate "Village-level poverty rate"
 
-save "village_level.dta", replace
+save "$DATA_DIR/village_level.dta", replace
 
 * Generate household-level data 
 clear
@@ -82,7 +94,7 @@ gen village_id = ceil(hhid / ceil(5000/90))
 replace village_id = 90 if village_id > 90   // trim edge case
 
 * Merge in village-level variables
-merge m:1 village_id using "village_level.dta", nogen
+merge m:1 village_id using "$DATA_DIR/village_level.dta", nogen
 
 * Household Identifiers & Strata 
 gen district = district_id
@@ -233,7 +245,7 @@ label var high_climate_vuln "High Climate Vulnerability (1=Yes)"
 label var vill_flood_risk "Flood-Prone Village (1=Yes)"
 label var vill_market_dist "Distance to Market (km)"
 
-save "rct_hh_survey.dta", replace
+save "$DATA_DIR/rct_hh_survey.dta", replace
 
 tabulate treat district, col nofreq
 summarize income_el pce_el food_exp_el days_work_el savings_el
@@ -273,15 +285,15 @@ summarize income_el pce_el food_exp_el days_work_el savings_el
 ******************
 **# OUTREG2 Basics
 ******************	
-use "rct_hh_survey.dta", clear
+use "$DATA_DIR/rct_hh_survey.dta", clear
 
 regress income_el treat
-outreg2 using "basic.xls", replace
+outreg2 using "$TABLE_DIR/basic.xls", replace
 
 
 /*
   What this produces:
-  - Excel file "part2_basic.xls"
+  - Excel file "$TABLE_DIR/basic.xls"
   - One column of results
   - Coefficient on treat + constant
   - Standard error in parentheses below each coef
@@ -295,22 +307,22 @@ outreg2 using "basic.xls", replace
 
 * Model 1: treatment only
 regress income_el treat
-outreg2 using "multiple_column.xls", replace ctitle ("No Control") label nocons addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") // nocons hides the constant; addtext adds custom rows: District FE = No, Covariates = No
+outreg2 using "$TABLE_DIR/multiple_column.xls", replace ctitle ("No Control") label nocons addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") // nocons hides the constant; addtext adds custom rows: District FE = No, Covariates = No
 
 
 * Model 2: Add household controls 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
-outreg2 using "multiple_column.xls", append ctitle ("With Control") label nocons addtext ("District FE", "No", "Covariates", "Yes", , "SE Clustered", "No") // append the regression with control to the next column 
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle ("With Control") label nocons addtext ("District FE", "No", "Covariates", "Yes", , "SE Clustered", "No") // append the regression with control to the next column 
 
 
 * Model 3: district FE 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district
-outreg2 using "multiple_column.xls", append ctitle ("District FE") drop(*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "No") //// drop(*.district) to hide district dummy coefficients
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle ("District FE") drop(*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "No") //// drop(*.district) to hide district dummy coefficients
 
 * Model 4: Control + FE + SE Clustered at Village
 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "multiple_column.xls", append ctitle (SE Clustered) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle (SE Clustered) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 
 *************************************************
@@ -319,21 +331,21 @@ outreg2 using "multiple_column.xls", append ctitle (SE Clustered) drop (*.distri
 
 * Model 1: treatment only
 regress income_el treat
-outreg2 using "multiple_column.xls", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") // nocons hides the constant; addtext adds custom rows: District FE = No, Covariates = No
+outreg2 using "$TABLE_DIR/multiple_column.xls", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") // nocons hides the constant; addtext adds custom rows: District FE = No, Covariates = No
 
 
 * Model 2: Add household controls 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
-outreg2 using "multiple_column.xls", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") // append the regression with control to the next column 
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") // append the regression with control to the next column 
 
 
 * Model 3: district FE 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district
-outreg2 using "multiple_column.xls", append ctitle ("District FE") drop(*.district) label nocons stats (coef pval) addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "No") //// drop(*.district) to hide district dummy coefficients
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle ("District FE") drop(*.district) label nocons stats (coef pval) addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "No") //// drop(*.district) to hide district dummy coefficients
 
 * Model 4: Control + FE + SE Clustered at Village
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "multiple_column.xls", append ctitle (SE Clustered) drop (*.district) label nocons stats (coef pval) addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/multiple_column.xls", append ctitle (SE Clustered) drop (*.district) label nocons stats (coef pval) addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 
 ******************
@@ -342,27 +354,27 @@ outreg2 using "multiple_column.xls", append ctitle (SE Clustered) drop (*.distri
 
 * Model 1: LPM
 regress child_school_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "binary.xls", replace ctitle (LPM) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/binary.xls", replace ctitle (LPM) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 * Model 2: Probit
 probit child_school_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "binary.xls", append ctitle (Probit) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/binary.xls", append ctitle (Probit) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 * Model 3: Probit With AME
 probit child_school_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 margins, dydx(*) post
-outreg2 using "binary.xls", append ctitle (Probit With AME) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/binary.xls", append ctitle (Probit With AME) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 * Model 4: Logistic
 logistic child_school_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "binary.xls", append ctitle (Logistic) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
+outreg2 using "$TABLE_DIR/binary.xls", append ctitle (Logistic) drop (*.district) label nocons addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village")
 
 
 *********************************
 **# Adding Summary Stats and Notes
 **********************************
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
-outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district) label nocons addstat("Adj. R-sq", e(r2_a), "F-statistic", e(F), "RMSE", e(rmse))  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
+outreg2 using "$TABLE_DIR/sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district) label nocons addstat("Adj. R-sq", e(r2_a), "F-statistic", e(F), "RMSE", e(rmse))  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
 
 
 
@@ -379,20 +391,20 @@ outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district
 **# Export Outputs to Word
 **************************
 regress income_el treat
-outreg2 using "word_output.doc", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
+outreg2 using "$DOC_DIR/word_output.doc", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
-outreg2 using "word_output.doc", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") 
+outreg2 using "$DOC_DIR/word_output.doc", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") 
 
 ***************************
 **# Export Outputs to LaTeX
 ***************************
 
 regress income_el treat
-outreg2 using "latex_output.tex", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
+outreg2 using "$TEX_DIR/latex_output.tex", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
-outreg2 using "latex_output.tex", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No")
+outreg2 using "$TEX_DIR/latex_output.tex", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No")
 
 /*=============================================================================
   PART 12 — ADVANCED OPTIONS: sortvar, title, tstat, merge, excel
@@ -412,7 +424,7 @@ outreg2 using "latex_output.tex", append ctitle ("With Control") label nocons st
 */
 
 regress income_el hh_land_owned hh_female_hh treat hh_age_head hh_edu_head hh_size 
-outreg2 using "sortvar.xls", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") sortvar(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned)
+outreg2 using "$TABLE_DIR/sortvar.xls", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") sortvar(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned)
 
 *********************************
 **# addstat — computed statistics
@@ -430,7 +442,7 @@ summarize income_el if treat == 0
 
 local ctrl_mean = r(mean)
 
-outreg2 using "adstat.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district) addstat("Control Group Mean", `ctrl_mean', "Adj. R-squared", e(r2_a), "F-stat", e(F)) dec(2)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
+outreg2 using "$TABLE_DIR/adstat.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district) addstat("Control Group Mean", `ctrl_mean', "Adj. R-squared", e(r2_a), "F-stat", e(F)) dec(2)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
 
 ****************************
 **# noaster -- noni -- nor2 
@@ -441,11 +453,11 @@ outreg2 using "adstat.xls", replace ctitle("(3) With Controls Only") label nocon
 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
-outreg2 using "nostar_noni_nor2.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noaster
+outreg2 using "$TABLE_DIR/nostar_noni_nor2.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noaster
 
-outreg2 using "nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noni
+outreg2 using "$TABLE_DIR/nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noni
 
-outreg2 using "nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") nor2
+outreg2 using "$TABLE_DIR/nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") nor2
 
 
 
@@ -468,14 +480,14 @@ summarize pce_el if treat == 0
 local ctrl1 = round(r(mean), 1)
 local n1 = r(N)
 
-outreg2 using "treatment_effects.xls", replace ctitle("(1) PCE (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl1', "Control N", `n1')addtext("District FE", "Yes", "Covariates", "Yes") nonotes dec(1) bdec(1) sdec(1)
+outreg2 using "$TABLE_DIR/treatment_effects.xls", replace ctitle("(1) PCE (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl1', "Control N", `n1')addtext("District FE", "Yes", "Covariates", "Yes") nonotes dec(1) bdec(1) sdec(1)
 * Income 
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize income_el if treat == 0
 local ctrl2 = round(r(mean), 1)
 
-outreg2 using "treatment_effects.xls", append ctitle("(2)", "Income (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl2') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
+outreg2 using "$TABLE_DIR/treatment_effects.xls", append ctitle("(2)", "Income (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl2') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
 
 * Food expenditure
 regress food_exp_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district,  vce(cluster village_id)
@@ -483,7 +495,7 @@ regress food_exp_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_o
 summarize food_exp_el if treat == 0
 local ctrl3 = round(r(mean), 1)
 
-outreg2 using "treatment_effects.xls",  append ctitle("(3)", "Food Exp (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl3') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
+outreg2 using "$TABLE_DIR/treatment_effects.xls",  append ctitle("(3)", "Food Exp (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl3') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
 
 *  Days worked 
 regress days_work_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
@@ -491,7 +503,7 @@ regress days_work_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land
 summarize days_work_el if treat == 0
 local ctrl4 = round(r(mean), 2)
 
-outreg2 using "treatment_effects.xls", append ctitle("(4)", "Days Worked") label nocons keep(treat) addstat("Control Mean", `ctrl4') addtext("District FE","Yes","Covariates","Yes")  nonotes dec(2)
+outreg2 using "$TABLE_DIR/treatment_effects.xls", append ctitle("(4)", "Days Worked") label nocons keep(treat) addstat("Control Mean", `ctrl4') addtext("District FE","Yes","Covariates","Yes")  nonotes dec(2)
 
 *  Savings 
 regress savings_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
@@ -499,7 +511,7 @@ regress savings_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_o
 summarize savings_el if treat == 0
 local ctrl5 = round(r(mean), 1)
 
-outreg2 using "treatment_effects.xls",  append  ctitle("(5)", "Savings (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl5') addtext("District FE","Yes","Covariates","Yes") nonotes  dec(1)
+outreg2 using "$TABLE_DIR/treatment_effects.xls",  append  ctitle("(5)", "Savings (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl5') addtext("District FE","Yes","Covariates","Yes") nonotes  dec(1)
 
 * Child schooling (LPM)
 regress child_school_el treat hh_size  hh_female_hh hh_edu_head hh_land_owned i.district, vce(cluster village_id)
@@ -507,7 +519,7 @@ regress child_school_el treat hh_size  hh_female_hh hh_edu_head hh_land_owned i.
 summarize child_school_el if treat == 0
 local ctrl6 = round(r(mean), 3)
 
-outreg2 using "treatment_effects.xls",  append ctitle("(6)", "Child School")  label nocons keep(treat) addstat("Control Mean", `ctrl6') addtext("District FE","Yes","Covariates","Yes") nonotes dec(3) bdec(3) sdec(3)
+outreg2 using "$TABLE_DIR/treatment_effects.xls",  append ctitle("(6)", "Child School")  label nocons keep(treat) addstat("Control Mean", `ctrl6') addtext("District FE","Yes","Covariates","Yes") nonotes dec(3) bdec(3) sdec(3)
 
 * Women's empowerment 
 regress women_emp_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
@@ -515,7 +527,7 @@ regress women_emp_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land
 summarize women_emp_el if treat == 0
 local ctrl7 = round(r(mean), 2)
 
-outreg2 using "treatment_effects.xls",  append ctitle("Women Empower.")  label nocons keep(treat) addstat("Control Mean", `ctrl7') addtext("District FE","Yes","Covariates","Yes") nonotes addnote("Notes: All specifications include district fixed effects and household", "controls (HH size, female-headed, age and education of head, land owned).", "Standard errors clustered at village level in parentheses.",  "ANCOVA specification: baseline outcome included as control.", "*** p<0.01  ** p<0.05  * p<0.10") dec(2)
+outreg2 using "$TABLE_DIR/treatment_effects.xls",  append ctitle("Women Empower.")  label nocons keep(treat) addstat("Control Mean", `ctrl7') addtext("District FE","Yes","Covariates","Yes") nonotes addnote("Notes: All specifications include district fixed effects and household", "controls (HH size, female-headed, age and education of head, land owned).", "Standard errors clustered at village level in parentheses.",  "ANCOVA specification: baseline outcome included as control.", "*** p<0.01  ** p<0.05  * p<0.10") dec(2)
 
 ************************************
 **# COMMON PITFALLS & DEBUGGING TIPS
@@ -634,4 +646,3 @@ outreg2 using "treatment_effects.xls",  append ctitle("Women Empower.")  label n
   │    title("text")       table title                                       │
   └──────────────────────────────────────────────────────────────────────────┘
 */
-
