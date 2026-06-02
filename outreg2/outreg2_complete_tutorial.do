@@ -368,7 +368,7 @@ outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district
 
 
 /*=============================================================================
-  PART 11 — WORD (.doc) AND LATEX (.tex) OUTPUT
+  WORD (.doc) AND LATEX (.tex) OUTPUT
   
   outreg2 can write to three formats:
   (a) Excel (.xls)  → default, easiest for copy-paste into Word
@@ -382,7 +382,6 @@ outreg2 using "sumstat_notes.xls", append ctitle (SE Clustered) drop (*.district
 regress income_el treat
 outreg2 using "word_output.doc", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
-
 regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
 outreg2 using "word_output.doc", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") 
 
@@ -390,42 +389,11 @@ outreg2 using "word_output.doc", append ctitle ("With Control") label nocons sta
 **# Export Outputs to LaTeX
 ***************************
 
-* ── 11b: LaTeX output ────────────────────────────────────────────────────────
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+regress income_el treat
+outreg2 using "latex_output.tex", replace ctitle ("No Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "No", "SE Clustered", "No") 
 
-outreg2 using "part11_table.tex",                              ///
-    replace                                                     ///
-    tex(frag)                                                   ///
-    ctitle("(1) Income")                                       ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    addtext("District FE","Yes")                               ///
-    title("Treatment Effects on Household Outcomes")
-
-regress pce_el treat pce_bl hh_size hh_female_hh                 ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-outreg2 using "part11_table.tex",                              ///
-    append                                                      ///
-    tex(frag)                                                   ///
-    ctitle("(2) PCE")                                          ///
-    label nocons keep(treat pce_bl)                            ///
-    drop(*.district)                                           ///
-    addtext("District FE","Yes")
-
-/*
-  tex(frag) → outputs a LaTeX fragment (just the tabular environment)
-              ready to \input{} into your paper's .tex file
-  tex(pr)   → outputs a complete LaTeX document (can compile standalone)
-  
-  To include in paper:   \input{part11_table.tex}
-*/
-
-di "Files saved: part11_table.doc | part11_table.tex"
-
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
+outreg2 using "latex_output.tex", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No")
 
 /*=============================================================================
   PART 12 — ADVANCED OPTIONS: sortvar, title, tstat, merge, excel
@@ -434,33 +402,22 @@ di "Files saved: part11_table.doc | part11_table.tex"
   mean + SD rows, storing in matrix, and the noaster option.
 =============================================================================*/
 
-di "=== PART 12: Advanced outreg2 Options ==="
 
-* ── 12a: sortvar — custom row ordering ──────────────────────────────────────
+***********
+**# SortVar
+***********
 /*
   By default, outreg2 shows variables in the order they appear in the model.
   sortvar() forces a specific ordering of coefficient rows.
   Variables not in sortvar() appear at the end.
 */
 
-regress income_el income_bl treat hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+regress income_el hh_land_owned hh_female_hh treat hh_age_head hh_edu_head hh_size 
+outreg2 using "sortvar.xls", append ctitle ("With Control") label nocons stats (coef pval) addtext ("District FE", "No", "Covariates", "Yes", "SE Clustered", "No") sortvar(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned)
 
-outreg2 using "part12_advanced.xls",                           ///
-    replace                                                     ///
-    ctitle("(1) Custom Row Order")                             ///
-    label nocons                                               ///
-    keep(treat income_bl hh_size hh_female_hh hh_edu_head)    ///
-    drop(*.district)                                           ///
-    sortvar(treat income_bl hh_size hh_female_hh hh_edu_head)
-
-/*
-  Without sortvar: income_bl appears first (it was first in regression)
-  With sortvar(treat ...): treat is forced to the top row
-*/
-
-* ── 12b: addstat — computed statistics ──────────────────────────────────────
+*********************************
+**# addstat — computed statistics
+*********************************
 /*
   addstat() can use:
   - e() scalars stored by the last estimation command
@@ -469,231 +426,101 @@ outreg2 using "part12_advanced.xls",                           ///
   - computed expressions
 */
 
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
-
-* Compute control group mean separately
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 summarize income_el if treat == 0
+
 local ctrl_mean = r(mean)
 
-outreg2 using "part12_advanced.xls",                           ///
-    append                                                      ///
-    ctitle("(2) With Control Mean")                            ///
-    label nocons keep(treat income_bl)                        ///
-    drop(*.district)                                           ///
-    addstat("Control Group Mean", `ctrl_mean',                 ///
-            "Adj. R-squared",  e(r2_a),                        ///
-            "F-stat", e(F))                                    ///
-    dec(2)
+outreg2 using "adstat.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district) addstat("Control Group Mean", `ctrl_mean', "Adj. R-squared", e(r2_a), "F-stat", e(F)) dec(2)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1")
 
-* ── 12c: Title row in the table ──────────────────────────────────────────────
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+****************************
+**# noaster -- noni -- nor2 
+****************************
+// noaster - hides significance stars
+// noaster - hides sample size
+// noaster - hides r squared
 
-outreg2 using "part12_advanced.xls",                           ///
-    append                                                      ///
-    ctitle("(3) Titled Table")                                 ///
-    label nocons keep(treat income_bl)                        ///
-    drop(*.district)                                           ///
-    title("Panel A: Income & Consumption Outcomes")            ///
-    addtext("District FE","Yes")
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
-* ── 12d: noaster — suppress significance stars ───────────────────────────────
-/*
-  Some journals require tables WITHOUT stars.
-  Use noaster to suppress all significance symbols.
-*/
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+outreg2 using "nostar_noni_nor2.xls", replace ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noaster
 
-outreg2 using "part12_advanced.xls",                           ///
-    append                                                      ///
-    ctitle("(4) No Stars")                                     ///
-    label nocons keep(treat income_bl)                        ///
-    drop(*.district)                                           ///
-    noaster
+outreg2 using "nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") noni
 
-* ── 12e: noni — suppress number of observations ──────────────────────────────
-outreg2 using "part12_advanced.xls",                           ///
-    append                                                      ///
-    ctitle("(5) No N displayed")                               ///
-    label nocons keep(treat income_bl)                        ///
-    drop(*.district)                                           ///
-    noni
+outreg2 using "nostar_noni_nor2.xls", append ctitle("(3) With Controls Only") label nocons drop(*.district)  addtext ("District FE", "Yes", "Covariates", "Yes", "SE Clustered", "Village") addnote("Standard errors clustered at village level.", "*** p<0.01 ** p<0.05 * p<0.1") nor2
 
-* ── 12f: nor2 — suppress R-squared ──────────────────────────────────────────
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
 
-outreg2 using "part12_advanced.xls",                           ///
-    append                                                      ///
-    ctitle("(6) No R-sq")                                      ///
-    label nocons keep(treat income_bl)                        ///
-    drop(*.district)                                           ///
-    nor2
 
-di "Table saved: part12_advanced.xls"
-
+************************************
+**# COMPLETE PUBLICATION-READY TABLE
+************************************
 
 /*=============================================================================
-  PART 13 — COMPLETE PUBLICATION-READY TABLE
   
-  Pulling everything together: a complete Table 2 for an RCT paper —
+  Pulling everything : a complete treatment_effect table for an RCT paper —
   Treatment effects on multiple outcomes with full controls,
   clustered SEs, district FE, control means, and clean formatting.
 =============================================================================*/
 
-di "=== PART 13: Complete Publication-Ready Table ==="
 
-capture erase "TABLE2_treatment_effects.xls"
-
-* ── Outcome 1: Per-capita consumption ───────────────────────────────────────
-regress pce_el treat pce_bl hh_size hh_female_hh                 ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+* Per-capita consumption
+regress pce_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize pce_el if treat == 0
 local ctrl1 = round(r(mean), 1)
-local n1    = e(N)
+local n1 = r(N)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    replace                                                     ///
-    ctitle("(1)", "PCE (BDT)")                                 ///
-    label nocons keep(treat pce_bl)                            ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl1')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(1) bdec(1) sdec(1)
-
-* ── Outcome 2: Income ────────────────────────────────────────────────────────
-regress income_el treat income_bl hh_size hh_female_hh           ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+outreg2 using "treatment_effects.xls", replace ctitle("(1) PCE (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl1', "Control N", `n1')addtext("District FE", "Yes", "Covariates", "Yes") nonotes dec(1) bdec(1) sdec(1)
+* Income 
+regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize income_el if treat == 0
 local ctrl2 = round(r(mean), 1)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(2)", "Income (BDT)")                              ///
-    label nocons keep(treat income_bl)                         ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl2')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(1) bdec(1) sdec(1)
+outreg2 using "treatment_effects.xls", append ctitle("(2)", "Income (BDT)")  label nocons keep(treat) addstat("Control Mean", `ctrl2') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
 
-* ── Outcome 3: Food expenditure ─────────────────────────────────────────────
-regress food_exp_el treat food_exp_bl hh_size hh_female_hh       ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+* Food expenditure
+regress food_exp_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned i.district,  vce(cluster village_id)
 
 summarize food_exp_el if treat == 0
 local ctrl3 = round(r(mean), 1)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(3)", "Food Exp (BDT)")                            ///
-    label nocons keep(treat food_exp_bl)                       ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl3')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(1) bdec(1) sdec(1)
+outreg2 using "treatment_effects.xls",  append ctitle("(3)", "Food Exp (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl3') addtext("District FE","Yes","Covariates","Yes") nonotes dec(1) bdec(1) sdec(1)
 
-* ── Outcome 4: Days worked ───────────────────────────────────────────────────
-regress days_work_el treat days_work_bl hh_size hh_female_hh     ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+*  Days worked 
+regress days_work_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize days_work_el if treat == 0
 local ctrl4 = round(r(mean), 2)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(4)", "Days Worked")                               ///
-    label nocons keep(treat days_work_bl)                      ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl4')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(2)
+outreg2 using "treatment_effects.xls", append ctitle("(4)", "Days Worked") label nocons keep(treat) addstat("Control Mean", `ctrl4') addtext("District FE","Yes","Covariates","Yes")  nonotes dec(2)
 
-* ── Outcome 5: Savings ───────────────────────────────────────────────────────
-regress savings_el treat savings_bl hh_size hh_female_hh         ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+*  Savings 
+regress savings_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize savings_el if treat == 0
 local ctrl5 = round(r(mean), 1)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(5)", "Savings (BDT)")                             ///
-    label nocons keep(treat savings_bl)                        ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl5')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(1)
+outreg2 using "treatment_effects.xls",  append  ctitle("(5)", "Savings (BDT)") label nocons keep(treat) addstat("Control Mean", `ctrl5') addtext("District FE","Yes","Covariates","Yes") nonotes  dec(1)
 
-* ── Outcome 6: Child schooling (LPM) ────────────────────────────────────────
-regress child_school_el treat child_school_bl hh_size            ///
-        hh_female_hh hh_edu_head hh_land_owned i.district,       ///
-        vce(cluster village_id)
+* Child schooling (LPM)
+regress child_school_el treat hh_size  hh_female_hh hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize child_school_el if treat == 0
 local ctrl6 = round(r(mean), 3)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(6)", "Child School")                              ///
-    label nocons keep(treat child_school_bl)                   ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl6')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    dec(3) bdec(3) sdec(3)
+outreg2 using "treatment_effects.xls",  append ctitle("(6)", "Child School")  label nocons keep(treat) addstat("Control Mean", `ctrl6') addtext("District FE","Yes","Covariates","Yes") nonotes dec(3) bdec(3) sdec(3)
 
-* ── Outcome 7: Women's empowerment ──────────────────────────────────────────
-regress women_emp_el treat women_emp_bl hh_size hh_female_hh     ///
-        hh_age_head hh_edu_head hh_land_owned i.district,        ///
-        vce(cluster village_id)
+* Women's empowerment 
+regress women_emp_el treat hh_size hh_female_hh  hh_age_head hh_edu_head hh_land_owned i.district, vce(cluster village_id)
 
 summarize women_emp_el if treat == 0
 local ctrl7 = round(r(mean), 2)
 
-outreg2 using "TABLE2_treatment_effects.xls",                  ///
-    append                                                      ///
-    ctitle("(7)", "Women Empower.")                            ///
-    label nocons keep(treat women_emp_bl)                      ///
-    drop(*.district)                                           ///
-    addstat("Control Mean", `ctrl7')                           ///
-    addtext("District FE","Yes","Covariates","Yes")            ///
-    nonotes                                                    ///
-    addnote("Notes: All specifications include district fixed effects and household",  ///
-            "controls (HH size, female-headed, age and education of head, land owned).",  ///
-            "Standard errors clustered at village level in parentheses.",              ///
-            "ANCOVA specification: baseline outcome included as control.",             ///
-            "*** p<0.01  ** p<0.05  * p<0.10")                 ///
-    dec(2)
+outreg2 using "treatment_effects.xls",  append ctitle("Women Empower.")  label nocons keep(treat) addstat("Control Mean", `ctrl7') addtext("District FE","Yes","Covariates","Yes") nonotes addnote("Notes: All specifications include district fixed effects and household", "controls (HH size, female-headed, age and education of head, land owned).", "Standard errors clustered at village level in parentheses.",  "ANCOVA specification: baseline outcome included as control.", "*** p<0.01  ** p<0.05  * p<0.10") dec(2)
 
-di "======================================================"
-di "FINAL TABLE saved: TABLE2_treatment_effects.xls"
-di "This is publication-ready Table 2 for an RCT paper."
-di "======================================================"
-
-
-/*=============================================================================
-  PART 14 — COMMON PITFALLS & DEBUGGING TIPS
-=============================================================================*/
-
-di "=== PART 14: Common Pitfalls & Tips ==="
+************************************
+**# COMMON PITFALLS & DEBUGGING TIPS
+************************************
 
 /*
   ┌──────────────────────────────────────────────────────────────────────────┐
@@ -705,15 +532,15 @@ di "=== PART 14: Common Pitfalls & Tips ==="
   
   ┌──────────────────────────────────────────────────────────────────────────┐
   │ PITFALL 2: Stale e() results                                             │
-  │   outreg2 reads the e() results stored in Stata's memory.               │
-  │   If you run a summarize, tabulate, or test BETWEEN regress and         │
+  │   outreg2 reads the e() results stored in Stata's memory.                │
+  │   If you run a summarize, tabulate, or test BETWEEN regress and          │
   │   outreg2, e() may be overwritten.                                       │
   │   Rule: ALWAYS run outreg2 immediately after the estimation command.     │
   │                                                                          │
   │   BAD:                                                                   │
   │     regress y x                                                          │
-  │     summarize y                     ← THIS CLEARS e()!                  │
-  │     outreg2 using "file.xls"        ← wrong results                     │
+  │     summarize y                     ← THIS CLEARS e()!                   │
+  │     outreg2 using "file.xls"        ← wrong results                      │
   │                                                                          │
   │   GOOD:                                                                  │
   │     regress y x                                                          │
@@ -730,107 +557,82 @@ di "=== PART 14: Common Pitfalls & Tips ==="
   
   ┌──────────────────────────────────────────────────────────────────────────┐
   │ PITFALL 4: Factor variables in keep/drop                                 │
-  │   If you use i.district in regression, the FE dummies are named         │
+  │   If you use i.district in regression, the FE dummies are named          │
   │   2.district, 3.district (factor notation).                              │
-  │   To drop them: drop(*.district)  — the wildcard * drops all levels.   │
-  │   Alternatively: keep(treat income_bl) and don't mention district at all│
+  │   To drop them: drop(*.district)  — the wildcard * drops all levels.     │
+  │   Alternatively: keep(treat income_bl) and don't mention district at all │
   └──────────────────────────────────────────────────────────────────────────┘
   
   ┌──────────────────────────────────────────────────────────────────────────┐
   │ PITFALL 5: File open in Excel                                            │
-  │   If the .xls file is open in Excel, outreg2 cannot write to it         │
+  │   If the .xls file is open in Excel, outreg2 cannot write to it          │
   │   and will error. Close the file first.                                  │
   └──────────────────────────────────────────────────────────────────────────┘
   
   ┌──────────────────────────────────────────────────────────────────────────┐
   │ PITFALL 6: append without replace first                                  │
-  │   If the file doesn't exist yet and you use append, outreg2 errors.     │
-  │   Rule: Always use replace for the very first model in a new file.      │
+  │   If the file doesn't exist yet and you use append, outreg2 errors.      │
+  │   Rule: Always use replace for the very first model in a new file.       │
   └──────────────────────────────────────────────────────────────────────────┘
   
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 7: Wrong decimal display for very large/small numbers           │
-  │   BDT values in thousands will display oddly with dec(3).               │
-  │   Use dec(0) or dec(1) for large monetary values.                       │
-  │   Use dec(3) or dec(4) for proportions/indices.                         │
+  │ PITFALL 7: Wrong decimal display for very large/small numbers            │
+  │   BDT values in thousands will display oddly with dec(3).                │
+  │   Use dec(0) or dec(1) for large monetary values.                        │
+  │   Use dec(3) or dec(4) for proportions/indices.                          │
   └──────────────────────────────────────────────────────────────────────────┘
   
   ┌──────────────────────────────────────────────────────────────────────────┐
   │ USEFUL DEBUGGING COMMANDS:                                               │
   │                                                                          │
-  │   ereturn list          → see all e() scalars after estimation          │
-  │   return list           → see r() scalars after r-class commands        │
-  │   help outreg2          → full option reference                         │
-  │   which outreg2         → confirm outreg2 is installed                  │
+  │   ereturn list          → see all e() scalars after estimation           │
+  │   return list           → see r() scalars after r-class commands         │
+  │   help outreg2          → full option reference                          │
+  │   which outreg2         → confirm outreg2 is installed                   │
   └──────────────────────────────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ QUICK REFERENCE: Most-Used outreg2 Options                              │
+  │ QUICK REFERENCE: Most-Used outreg2 Options                               │
   │                                                                          │
   │  File control:                                                           │
-  │    replace             first model; creates new file                    │
-  │    append              subsequent models; adds column                   │
-  │    using "file.xls"    output filename                                  │
+  │    replace             first model; creates new file                     │
+  │    append              subsequent models; adds column                    │
+  │    using "file.xls"    output filename                                   │
   │                                                                          │
   │  Column appearance:                                                      │
-  │    ctitle("text")      column header                                    │
-  │    label               use variable labels                              │
-  │    nocons              hide constant                                    │
-  │    keep(varlist)       show only these rows                             │
-  │    drop(varlist)       hide these rows                                  │
-  │    sortvar(varlist)    reorder coefficient rows                         │
+  │    ctitle("text")      column header                                     │
+  │    label               use variable labels                               │
+  │    nocons              hide constant                                     │
+  │    keep(varlist)       show only these rows                              │
+  │    drop(varlist)       hide these rows                                   │
+  │    sortvar(varlist)    reorder coefficient rows                          │
   │                                                                          │
   │  Stats below coefficients:                                               │
-  │    stats(coef se)      default: coef + SE                               │
-  │    stats(coef tstat)   coef + t-statistic                               │
-  │    stats(coef pval)    coef + p-value                                   │
+  │    stats(coef se)      default: coef + SE                                │
+  │    stats(coef tstat)   coef + t-statistic                                │
+  │    stats(coef pval)    coef + p-value                                    │
   │                                                                          │
   │  Decimals:                                                               │
-  │    dec(#)              both coef and SE                                 │
-  │    bdec(#)             coef only                                        │
-  │    sdec(#)             SE only                                          │
+  │    dec(#)              both coef and SE                                  │
+  │    bdec(#)             coef only                                         │
+  │    sdec(#)             SE only                                           │
   │                                                                          │
   │  Stars:                                                                  │
-  │    alpha(# # #)        significance thresholds                         │
-  │    symbol(* ** ***)    corresponding symbols                            │
-  │    noaster             no stars at all                                  │
+  │    alpha(# # #)        significance thresholds                           │
+  │    symbol(* ** ***)    corresponding symbols                             │
+  │    noaster             no stars at all                                   │
   │                                                                          │
   │  Summary statistics:                                                     │
-  │    addstat("lbl", val) custom numeric rows at bottom                   │
-  │    addtext("lbl","val")custom text rows at bottom                      │
-  │    addnote("text")     footnotes                                        │
-  │    noni                hide N                                           │
-  │    nor2                hide R-squared                                   │
+  │    addstat("lbl", val) custom numeric rows at bottom                     │
+  │    addtext("lbl","val")custom text rows at bottom                        │
+  │    addnote("text")     footnotes                                         │
+  │    noni                hide N                                            │
+  │    nor2                hide R-squared                                    │
   │                                                                          │
   │  Format:                                                                 │
-  │    word / tex(frag)    Word or LaTeX output                             │
-  │    eform               exponentiate coefs (OR, IRR, HR)                │
-  │    title("text")       table title                                      │
+  │    word / tex(frag)    Word or LaTeX output                              │
+  │    eform               exponentiate coefs (OR, IRR, HR)                  │
+  │    title("text")       table title                                       │
   └──────────────────────────────────────────────────────────────────────────┘
 */
 
-
-* ── Cleanup temporary files ──────────────────────────────────────────────────
-capture erase "village_level.dta"
-
-di ""
-di "========================================================================="
-di "  TUTORIAL COMPLETE — Files generated:"
-di "  rct_hh_survey.dta          → 5,000-HH RCT dataset"
-di "  part2_basic.xls            → simplest outreg2 output"
-di "  part3_ols_income.xls       → multi-spec OLS table"
-di "  part4_clustered_se.xls     → robust/clustered SE table"
-di "  part5_fe.xls               → fixed effects table"
-di "  part6_iv.xls               → IV/2SLS table"
-di "  part7_binary.xls           → probit/logit/LPM table"
-di "  part8_formatting.xls       → formatting options demo"
-di "  part9_multioutcome.xls     → multi-outcome treatment table"
-di "  part10_hte.xls             → heterogeneous treatment effects"
-di "  part11_table.doc           → Word output"
-di "  part11_table.tex           → LaTeX fragment output"
-di "  part12_advanced.xls        → advanced options demo"
-di "  TABLE2_treatment_effects.xls → FINAL publication-ready table"
-di "  outreg2_tutorial.log       → session log"
-di "========================================================================="
-
-log close
