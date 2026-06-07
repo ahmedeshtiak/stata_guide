@@ -1,0 +1,36 @@
+
+="",="(1)"
+="",="Income Endline (BDT/month)"
+
+="Treatment Indicator (1=Treated)",="424.2***"
+="",="(19.8)"
+
+="Household Size",="3.1"
+="",="(10.5)"
+
+="Female-Headed Household (1=Yes)",="-57.2**"
+="",="(24.4)"
+
+="Age of Household Head (years)",="2.1**"
+="",="(1.0)"
+
+="Education of Head (years)",="42.6***"
+="",="(5.1)"
+
+="Land Owned (acres)",="-15.0"
+="",="(77.6)"
+
+="Constant",="2024.9***"
+="",="(76.5)"
+
+="District FE",="Yes"
+="Covariates",="Yes"
+="Control Mean (BDT)",="2269.5"
+="Adj. R²",="0.1"
+="F-statistic",="70.8"
+="Observations",="5000.0"
+
+="Standard errors in parentheses"
+="Standard errors clustered at village level."
+="* p<0.10, ** p<0.05, *** p<0.01"
+="* p<0.10, ** p<0.05, *** p<0.01"

@@ -3,7 +3,7 @@
   Using a Simulated Large-Scale RCT Household Survey Dataset
   
   Author  : Ahmed Eshtiak | BIGD, BRAC University
-  Purpose : In-depth mastery of outreg2 — every option, every use case
+  Purpose : In-depth mastery of outreg2
   Data    : Simulated RCT HH Survey — 5,000 households, 3 districts,
             treatment/control arms, baseline + endline structure
             
