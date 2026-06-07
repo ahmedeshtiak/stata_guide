@@ -1,0 +1,29 @@
+
+="",="(1)"
+="",="Income Endline (BDT/month)"
+
+="Treatment Indicator (1=Treated)",="424.2***"
+="",="[384.8,463.6]"
+
+="Household Size",="3.108"
+="",="[-17.76,23.97]"
+
+="Female-Headed Household (1=Yes)",="-57.16*"
+="",="[-105.6,-8.755]"
+
+="Age of Household Head (years)",="2.078*"
+="",="[0.168,3.987]"
+
+="Education of Head (years)",="42.55***"
+="",="[32.44,52.66]"
+
+="Land Owned (acres)",="-15.00"
+="",="[-169.1,139.1]"
+
+="Constant",="2024.9***"
+="",="[1872.9,2176.9]"
+
+="Observations",="5000"
+
+="95% confidence intervals in brackets"
+="* p<0.05, ** p<0.01, *** p<0.001"

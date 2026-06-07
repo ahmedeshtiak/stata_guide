@@ -8,24 +8,19 @@
             treatment/control arms, baseline + endline structure
             (Same dataset as the outreg2 tutorial — run that first,
              or run Part 0–1 below to regenerate it.)
-
-  SECTIONS:
-  Part 0  — Install estout and Required Packages
-  Part 1  — Generate (or Load) the Simulated RCT Dataset
-  Part 2  — estout Ecosystem: eststo, estadd, esttab, estout
-  Part 3  — esttab Fundamentals: Basic Syntax & Core Logic
-  Part 4  — Multi-Column OLS Tables: Controls, Fixed Effects, Clustered SEs
-  Part 5  — Displaying Alternative Statistics: SE, t, p-value, CI
-  Part 6  — Binary Outcome Models: LPM, Probit (AME), Logit
-  Part 7  — Adding Summary Statistics, Custom Scalars, and Notes
-  Part 8  — Exporting to Excel (.csv), Word (.rtf), LaTeX (.tex)
-  Part 9  — Advanced Options: keep/drop, order, refcat, mgroups, mtitles
-  Part 10 — Publication-Ready Treatment Effect Table (Multiple Outcomes)
-  Part 11 — Common Pitfalls and Debugging Tips
-  Part 12 — Quick Reference: Most-Used esttab Options
-  Part 13 — esttab vs outreg2: Side-by-Side Comparison
-
-=============================================================================*/
+/*******************************************************************************
+Project:		COMPLETE ESTTAB / ESTOUT TUTORIAL FOR STATA
+Organization:	BIGD, BracU
+Author:			Ahmed Eshtiak
+Date created:	06/06/2026
+Last edited:	08/06/2026
+Last edited by: 
+Description:	In-depth mastery of esttab (part of the estout package)				
+Data      :     Simulated RCT HH Survey — 5,000 households, 3 districts,
+                treatment/control arms, baseline + endline structure
+              (Same dataset as the outreg2 tutorial — run that first,
+               or run Part 0–1 below to regenerate it.):			
+*******************************************************************************/=============================================================================*/
 
 clear all
 set more off
@@ -119,7 +114,7 @@ eststo b1: regress income_el treat
 esttab b1 // shows in Results window only
 esttab b1, se label  // with SEs and variable labels
 
-esttab using "$RESULT/basic.csv" replace se label nocons
+esttab b1 using "$RESULT/basic.csv", replace se label nocons
 
 **********************
 **# Multi-Column Table
@@ -240,147 +235,31 @@ esttab m1 m2 using "$RESULT/1_doc/export_word.rtf", replace label nocons se star
 
 esttab m1 m2 using "$RESULT/2_latex/export_latex.tex", replace label nocons se star(* 0.10 ** 0.05 *** 0.01) mtitles("No Control" "With Controls") booktabs fragment stats(distFE covars N r2, labels("District FE" "Covariates" "Observations" "R-squared")) addnotes("Standard errors in parentheses." "* p<0.10, ** p<0.05, *** p<0.01")
 
-esttab m1 m2 using "$RESULT/3_html/export_html.html", replace label nocons se star(* 0.10 ** 0.05 *** 0.01) mtitles("No Control" "With Controls") stats(N r2, labels("Observations" "R-squared")) addnotes("Standard errors in parentheses.")
+//esttab m1 m2 using "$RESULT/2_html/export_html.html", replace label nocons se star(* 0.10 ** 0.05 *** 0.01) mtitles("No Control" "With Controls") stats(N r2, labels("Observations" "R-squared")) addnotes("Standard errors in parentheses.")
 
-
-
-
-
-
-*()****************************************************************************************
-/*=============================================================================
-  PART 9 — ADVANCED OPTIONS: keep / drop / order / refcat / mgroups / mtitles
-
-  These are the options that give esttab its edge over outreg2 for
-  complex publication tables.
-=============================================================================*/
-
-use "$DATA_DIR/rct_hh_survey.dta", clear
-
-*──────────────────────────────
-**# 9.1 order() — reorder coefficient rows
-*──────────────────────────────
-/*
-  order() is esttab's version of outreg2's sortvar().
-  It forces treat to appear first regardless of model specification order.
-*/
-
-eststo clear
-eststo: regress income_el hh_land_owned hh_female_hh treat hh_age_head hh_edu_head hh_size
-
-esttab using "$TABLE_DIR/order_demo.csv",                        ///
-    replace label nocons se                                       ///
-    order(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned) ///
-    stats(N r2, labels("Observations" "R-squared"))               ///
-    addnotes("Rows ordered via order() option.")
-
-*──────────────────────────────
-**# 9.2 mtitles() — column titles (outreg2: ctitle)
-*──────────────────────────────
-eststo clear
-eststo m1: regress income_el treat
-eststo m2: regress income_el treat hh_size hh_female_hh
-
-esttab m1 m2 using "$TABLE_DIR/mtitles_demo.csv",  ///
-    replace label nocons se                          ///
-    mtitles("(1) No Controls" "(2) With Controls")
-
-*──────────────────────────────
-**# 9.3 mgroups() — spanning headers above columns (unique to esttab)
-*──────────────────────────────
-/*
-  mgroups() adds a row of group labels that span multiple columns.
-  pattern(1 0 1 0) means: group label starts at column 1, continues
-  to column 2 (the 0), starts a new group at column 3, continues to 4.
-  This creates the double-header effect seen in journals.
-  outreg2 cannot do this natively — esttab advantage!
-*/
-
+***********
+**# MGROUPS 
+***********
 eststo clear
 eststo m1: regress income_el treat
 eststo m2: regress income_el treat hh_size hh_female_hh
 eststo m3: regress pce_el treat
 eststo m4: regress pce_el treat hh_size hh_female_hh
 
-esttab m1 m2 m3 m4 using "$TABLE_DIR/mgroups_demo.csv",          ///
-    replace label nocons se                                        ///
-    mgroups("Monthly Income (BDT)" "Per-Capita Expenditure (BDT)", ///
-            pattern(1 0 1 0))                                      ///
-    mtitles("No Controls" "Controls" "No Controls" "Controls")    ///
-    stats(N r2, labels("Observations" "R-squared"))
+esttab m1 m2 m3 m4 using "$RESULT/0_excel/mgroups_demo.csv", replace label nocons se mgroups("Monthly Income (BDT)" "Per-Capita Expenditure (BDT)",pattern(1 0 1 0)) mtitles("No Controls" "Controls" "No Controls" "Controls") stats(N r2, labels("Observations" "R-squared"))
 
-*──────────────────────────────
-**# 9.4 refcat() — section dividers within the coefficient block
-*──────────────────────────────
-/*
-  refcat() inserts a text label ABOVE a specified variable row.
-  This creates "grouped" coefficient tables common in applied papers.
-  outreg2 cannot do this — esttab advantage!
-*/
+************************************************************
+**# refcat() — section dividers within the coefficient block
+************************************************************
 
 eststo clear
 eststo m1: regress income_el treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned
 
-esttab m1 using "$TABLE_DIR/refcat_demo.csv",                     ///
-    replace label nocons se                                        ///
-    order(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned) ///
-    refcat(treat "Treatment" hh_size "Household Characteristics", nolabel) ///
-    stats(N r2, labels("Observations" "R-squared"))                ///
-    addnotes("refcat() inserts section headers above variable rows.")
+esttab m1 using "$RESULT/0_excel/refcat_demo.csv", replace label nocons se order(treat hh_size hh_female_hh hh_age_head hh_edu_head hh_land_owned) refcat(treat "Treatment" hh_size "Household Characteristics", nolabel) stats(N r2, labels("Observations" "R-squared")) addnotes("refcat() inserts section headers above variable rows.")
 
-*──────────────────────────────
-**# 9.5 Decimal control: b() and se() format specifiers
-*──────────────────────────────
-/*
-  esttab uses Stata format strings:
-    %9.1f  →  1 decimal   (for monetary values, BDT)
-    %9.3f  →  3 decimals  (for proportions, indices)
-    %9.0fc →  integer with commas (for large counts)
-  outreg2 equivalent: dec(#) / bdec(#) / sdec(#)
-*/
-
-eststo clear
-eststo m1: regress income_el treat hh_size hh_female_hh
-esttab m1 using "$TABLE_DIR/decimal_demo.csv",     ///
-    replace label nocons se                         ///
-    b(%9.1f) se(%9.1f)                             ///
-    stats(N r2, fmt(%9.0f %9.3f) labels("Observations" "R-squared"))
-
-*──────────────────────────────
-**# 9.6 nostar / nosig — suppress significance stars
-*──────────────────────────────
-/*
-  nostar suppresses ALL stars. (outreg2: noaster)
-  You might want this when reporting p-values separately.
-*/
-
-esttab m1 using "$TABLE_DIR/nostar_demo.csv", replace label nocons se p nostar
-* Shows p-values but no stars
-
-*──────────────────────────────
-**# 9.7 nobs / nor2 — suppress N and R²
-*──────────────────────────────
-/*
-  nobs → suppress observations row (outreg2: noni)
-  nor2 → suppress R-squared (outreg2: nor2)
-*/
-
-esttab m1 using "$TABLE_DIR/nobs_nor2_demo.csv", replace label nocons se nobs nor2
-
-
-/*=============================================================================
-  PART 10 — PUBLICATION-READY TREATMENT EFFECT TABLE (Multiple Outcomes)
-
-  This is the esttab equivalent of outreg2 tutorial Part 10.
-  Same structure: 7 outcomes × 1 column each, with:
-  - District FE + household controls
-  - Clustered SEs at village level
-  - Control group mean row
-  - Custom footnote
-  - All in one esttab call
-=============================================================================*/
-
-use "$DATA_DIR/rct_hh_survey.dta", clear
+****************************************************************
+**# PUBLICATION-READY TREATMENT EFFECT TABLE (Multiple Outcomes)
+****************************************************************
 eststo clear
 
 *─── (1) Per-capita consumption ───────────────────────────────────────────────
@@ -439,101 +318,50 @@ estadd scalar ctrl_mean = `ctrl7'
 estadd local  distFE "Yes"
 estadd local  covars "Yes"
 
-*──────────────────────────────────────────────────────────────────────────────
-* PRODUCE THE FULL PUBLICATION TABLE IN ONE CALL
-*──────────────────────────────────────────────────────────────────────────────
-esttab pce inc food work sav school womemp using "$TABLE_DIR/treatment_effects.csv", ///
-    replace                                                                           ///
-    label                                                                             ///
-    nocons                                                                            ///
-    se                                                                                ///
-    star(* 0.10 ** 0.05 *** 0.01)                                                    ///
-    keep(treat)                                                                       ///  show ONLY the treatment coefficient
-    order(treat)                                                                      ///
-    mtitles("(1) PCE" "(2) Income" "(3) Food Exp" "(4) Days Worked"                  ///
-            "(5) Savings" "(6) Child School" "(7) Women Empower.")                   ///
-    stats(distFE covars ctrl_mean N r2,                                              ///
-          labels("District FE" "Covariates" "Control Mean" "Observations" "R-squared") ///
-          fmt(%9.0f %9.0f %9.1f %9.0f %9.3f))                                       ///
-    addnotes("All specifications include district fixed effects and household"        ///
-             "controls (HH size, female-headed, age and education of head, land)."   ///
-             "Standard errors clustered at village level in parentheses."            ///
-             "* p<0.10  ** p<0.05  *** p<0.01")
 
-/*
-  KEY OPTION USED HERE:
-  keep(treat) → shows ONLY the treat row (outreg2 equivalent: keep(treat))
-  This is the standard for publication-ready RCT tables where
-  you only want to display the treatment coefficient, not all controls.
-*/
-
+esttab pce inc food work sav school womemp using "$TABLE_DIR/treatment_effects.csv", replace label nocons se star(* 0.10 ** 0.05 *** 0.01) keep(treat) order(treat) mtitles("(1) PCE" "(2) Income" "(3) Food Exp" "(4) Days Worked" "(5) Savings" "(6) Child School" "(7) Women Empower.") stats(distFE covars ctrl_mean N r2, labels("District FE" "Covariates" "Control Mean" "Observations" "R-squared") fmt(%9.0f %9.0f %9.1f %9.0f %9.3f)) addnotes("All specifications include district fixed effects and household controls (HH size, female-headed, age and education of head, land)." "Standard errors clustered at village level in parentheses." "* p<0.10  ** p<0.05  *** p<0.01")
 
 /*=============================================================================
-  PART 11 — COMMON PITFALLS AND DEBUGGING TIPS
+ COMMON PITFALLS AND DEBUGGING TIPS
 
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 1: Not clearing stored estimates (eststo clear)                  │
-  │   If you run new regressions without eststo clear, old models             │
+  │ PITFALL : Not clearing stored estimates (eststo clear)                  │
+  │   If you run new regressions without eststo clear, old models            │
   │   accumulate in memory and appear in your table unexpectedly.            │
   │   Rule: ALWAYS start a new table block with: eststo clear                │
   └──────────────────────────────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 2: estadd after summarize clears r()                             │
-  │   Compute control mean BEFORE the regression and store in a local.       │
+  │ PITFALL : estadd after summarize clears r()                              │
+  │   Compute stats' BEFORE the regression and store in a local.             │
   │                                                                          │
   │   BAD:                                                                   │
   │     eststo m1: regress income_el treat                                   │
   │     summarize income_el if treat == 0                                    │
-  │     estadd scalar ctrl_mean = r(mean)   ← r() from summarize is fine    │
+  │     estadd scalar ctrl_mean = r(mean)   ← r() from summarize is fine     │
   │     ← BUT: if you add another r-class command here, r() clears           │
   │                                                                          │
   │   GOOD:                                                                  │
   │     summarize income_el if treat == 0                                    │
   │     local ctrl_mean = r(mean)            ← save to local FIRST           │
   │     eststo m1: regress income_el treat                                   │
-  │     estadd scalar ctrl_mean = `ctrl_mean'  ← safe                       │
+  │     estadd scalar ctrl_mean = `ctrl_mean'  ← safe                        │
   └──────────────────────────────────────────────────────────────────────────┘
 
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 3: estadd scalars not showing in esttab                          │
-  │   You must list the scalar name in stats() for it to appear.             │
-  │   estadd just stores it; stats() displays it.                            │
-  │                                                                          │
-  │   estadd scalar ctrl_mean = 1500        ← stores scalar                  │
-  │   esttab, stats(N r2)                   ← ctrl_mean NOT shown (missing!) │
-  │   esttab, stats(ctrl_mean N r2)         ← correct                        │
-  └──────────────────────────────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 4: fmt() order must match stats() order                          │
-  │   stats(distFE ctrl_mean N r2, fmt(%9.0f %9.1f %9.0f %9.3f))            │
-  │   → 4 stats → 4 fmt codes, in exact order                               │
-  │   If you have text locals (like "Yes"/"No"), their fmt is ignored,       │
-  │   but you must still include a placeholder format for them.              │
-  └──────────────────────────────────────────────────────────────────────────┘
-
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 5: keep() vs order()                                             │
-  │   keep(varlist)  → ONLY show these variables (hides all others)          │
-  │   order(varlist) → reorder rows, but show ALL variables                  │
-  │   For a treatment-only table: use keep(treat)                            │
-  │   For reordering controls:    use order(treat hh_size ...)               │
-  └──────────────────────────────────────────────────────────────────────────┘
-
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 6: Probit/Logit with AME — e() is overwritten by margins         │
-  │   After: probit y x, then: margins, dydx(*) post                        │
+  │ PITFALL : Probit/Logit with AME — e() is overwritten by margins          │
+  │   After: probit y x, then: margins, dydx(*) post                         │
   │   e() now holds the margins results, NOT the probit results.             │
   │   eststo AFTER margins captures the AME, which is usually what you want. │
-  │   If you want BOTH probit coefs AND AME: run probit → eststo probit_coef  │
+  │   If you want BOTH probit coefs AND AME: run probit → eststo probit_coef │
   │   then run margins → eststo probit_ame (two separate stored results)     │
   └──────────────────────────────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │ PITFALL 7: File open in another program                                  │
+  │ PITFALL : File open in another program                                   │
   │   If the .csv or .rtf is open in Excel/Word, esttab cannot write to it.  │
-  │   Close the file, re-run. (Same as outreg2's .xls pitfall.)             │
+  │   Close the file, re-run. (Same as outreg2's .xls pitfall.)              │
   └──────────────────────────────────────────────────────────────────────────┘
 
   USEFUL DEBUGGING COMMANDS:
@@ -558,7 +386,7 @@ esttab pce inc food work sav school womemp using "$TABLE_DIR/treatment_effects.c
   │    using "file.csv"    output filename (.csv .rtf .tex .html)            │
   │                                                                          │
   │  Column appearance:                                                      │
-  │    mtitles("c1" "c2") column headers      [outreg2: ctitle()]           │
+  │    mtitles("c1" "c2") column headers      [outreg2: ctitle()]            │
   │    mgroups("g" ..., pattern(1 0 1)) spanning group headers               │
   │    label               use variable labels [outreg2: label]              │
   │    nocons              hide constant       [outreg2: nocons]             │
@@ -568,14 +396,14 @@ esttab pce inc food work sav school womemp using "$TABLE_DIR/treatment_effects.c
   │    refcat(var "lbl")   insert section header above row                   │
   │                                                                          │
   │  Stats below coefficients:                                               │
-  │    se                  standard errors (default) [outreg2: stats(coef se)]│
-  │    t                   t-statistics       [outreg2: stats(coef tstat)]   │
-  │    p                   p-values           [outreg2: stats(coef pval)]    │
-  │    ci                  confidence intervals (no outreg2 equivalent)      │
+  │    se                 standard errors (default) [outreg2: stats(coef se)]│
+  │    t                  t-statistics       [outreg2: stats(coef tstat)]    │
+  │    p                  p-values           [outreg2: stats(coef pval)]     │
+  │    ci                 confidence intervals (no outreg2 equivalent)       │
   │                                                                          │
   │  Formatting:                                                             │
-  │    b(%9.2f)            coefficient format  [outreg2: bdec(2)]           │
-  │    se(%9.2f)           SE format           [outreg2: sdec(2)]           │
+  │    b(%9.2f)            coefficient format  [outreg2: bdec(2)]            │
+  │    se(%9.2f)           SE format           [outreg2: sdec(2)]            │
   │    star(* .10 ** .05 *** .01)  significance stars                        │
   │    nostar              no significance stars [outreg2: noaster]          │
   │    nolz                no leading zero (p-values: .05 not 0.05)          │
@@ -584,77 +412,18 @@ esttab pce inc food work sav school womemp using "$TABLE_DIR/treatment_effects.c
   │    stats(N r2 ...)     built-in + custom scalars to show                 │
   │    fmt(...)            format for each stats row                         │
   │    labels("lbl" ...)   friendly names for stats rows                     │
-  │    addnotes("note")    footnotes [outreg2: addnote]                     │
-  │    nobs                suppress N [outreg2: noni]                       │
-  │    nor2                suppress R² [outreg2: nor2]                      │
+  │    addnotes("note")    footnotes [outreg2: addnote]                      │
+  │    nobs                suppress N [outreg2: noni]                        │
+  │    nor2                suppress R² [outreg2: nor2]                       │
   │                                                                          │
   │  Output format:                                                          │
-  │    (auto from extension) .csv / .rtf / .tex / .html                     │
-  │    booktabs            LaTeX with professional rules                     │
-  │    fragment            LaTeX without table wrapper                       │
-  │    compress            remove blank lines                                │
-  │    wide                coefficients and SE on same row                   │
-  │    eform               exponentiate coefs (OR, IRR, HR) [outreg2: eform]│
+  │    (auto from extension) .csv / .rtf / .tex / .html                      │
+  │    booktabs           LaTeX with professional rules                      │
+  │    fragment           LaTeX without table wrapper                        │
+  │    compress           remove blank lines                                 │
+  │    wide               coefficients and SE on same row                    │
+  │    eform              exponentiate coefs (OR, IRR, HR) [outreg2: eform]  │
   └──────────────────────────────────────────────────────────────────────────┘
 */
 
 
-/*=============================================================================
-  PART 13 — esttab vs outreg2: SIDE-BY-SIDE COMPARISON
-
-  ┌─────────────────────────┬──────────────────────────┬─────────────────────────────┐
-  │  TASK                   │  outreg2                 │  esttab                     │
-  ├─────────────────────────┼──────────────────────────┼─────────────────────────────┤
-  │ Write after each reg    │ YES (write immediately)  │ NO (store first, then write)│
-  │ Store results           │ Not needed               │ eststo                      │
-  │ Add custom scalars      │ addstat()                │ estadd scalar               │
-  │ Add text indicator rows │ addtext()                │ estadd local + stats()      │
-  │ Column title            │ ctitle()                 │ mtitles()                   │
-  │ Spanning column header  │ Not supported            │ mgroups()                   │
-  │ Section dividers        │ Not supported            │ refcat()                    │
-  │ Reorder rows            │ sortvar()                │ order()                     │
-  │ Suppress constant       │ nocons                   │ nocons (identical)          │
-  │ Keep/drop variables     │ keep() / drop()          │ keep() / drop() (identical) │
-  │ Show SE                 │ stats(coef se) [default] │ se (default)                │
-  │ Show t-stat             │ stats(coef tstat)        │ t                           │
-  │ Show p-value            │ stats(coef pval)         │ p                           │
-  │ Show CI                 │ Not supported            │ ci                          │
-  │ No stars                │ noaster                  │ nostar                      │
-  │ No N                    │ noni                     │ nobs                        │
-  │ No R²                   │ nor2                     │ nor2 (identical)            │
-  │ Decimal control         │ dec() bdec() sdec()      │ b(%fmt) se(%fmt)            │
-  │ Significance levels     │ alpha() symbol()         │ star()                      │
-  │ Excel output            │ .xls (native)            │ .csv (opens in Excel)       │
-  │ Word output             │ .doc (native)            │ .rtf (opens in Word)        │
-  │ LaTeX output            │ tex option               │ auto from .tex extension    │
-  │ LaTeX booktabs          │ Not supported            │ booktabs option             │
-  │ HTML output             │ Not supported            │ .html extension             │
-  │ Footnotes               │ addnote()                │ addnotes()                  │
-  │ Actively maintained     │ Not since ~2015          │ YES (Ben Jann, 2024)        │
-  └─────────────────────────┴──────────────────────────┴─────────────────────────────┘
-
-  WHEN TO USE WHICH:
-  ──────────────────────────────────────────────────────────────────────────
-  Use outreg2 when:
-    • You have existing scripts already written in outreg2
-    • You need .doc output specifically
-    • Your supervisor/collaborators use outreg2 templates
-
-  Use esttab when:
-    • Writing new code from scratch
-    • You need booktabs LaTeX tables for journal submission
-    • You want spanning headers (mgroups) or section dividers (refcat)
-    • You want to store results and create multiple table variants
-    • You need HTML output for reports
-
-  Use BOTH when:
-    • Sanity-checking (same regression, same table → outputs should match)
-    • Your team uses mixed tools
-
-=============================================================================*/
-
-* END OF TUTORIAL
-di "esttab tutorial complete. All output files written to:"
-di "  Excel/CSV : $TABLE_DIR"
-di "  Word/RTF  : $DOC_DIR"
-di "  LaTeX     : $TEX_DIR"

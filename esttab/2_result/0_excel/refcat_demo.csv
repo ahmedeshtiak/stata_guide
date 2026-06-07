@@ -1,0 +1,32 @@
+
+="",="(1)"
+="",="Income Endline (BDT/month)"
+
+="Treatment",=""
+
+="Treatment Indicator (1=Treated)",="419.5***"
+="",="(23.28)"
+
+="Household Characteristics",=""
+
+="Household Size",="3.084"
+="",="(10.28)"
+
+="Female-Headed Household (1=Yes)",="-57.14*"
+="",="(23.10)"
+
+="Age of Household Head (years)",="2.063*"
+="",="(0.985)"
+
+="Education of Head (years)",="42.72***"
+="",="(5.038)"
+
+="Land Owned (acres)",="-14.50"
+="",="(71.25)"
+
+="Observations",="5000"
+="R-squared",="0.0750"
+
+="Standard errors in parentheses"
+="refcat() inserts section headers above variable rows."
+="* p<0.05, ** p<0.01, *** p<0.001"
